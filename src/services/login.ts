@@ -1,19 +1,10 @@
-import request from '@/utils/request';
+import { baseCRUD } from '@/utils/request';
+import { FormDataType } from '@/pages/user/login';
 
-export interface LoginParamsType {
-  userName: string;
-  password: string;
-  mobile: string;
-  captcha: string;
-}
+// 登录
+export const authLogin = (params: FormDataType, method: string = 'GET') =>
+  baseCRUD(params, method, '/api/v1/auth/login');
 
-export async function fakeAccountLogin(params: LoginParamsType) {
-  return request('/api/login/account', {
-    method: 'POST',
-    data: params,
-  });
-}
-
-export async function getFakeCaptcha(mobile: string) {
-  return request(`/api/login/captcha?mobile=${mobile}`);
-}
+// 刷新token
+export const refreshToken = (params: any, method: string = 'GET') =>
+  baseCRUD(params, method, '/api/v1/auth/refresh');

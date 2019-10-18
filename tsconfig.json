@@ -29,6 +29,10 @@
     "jest",
     "src/setupTests.ts",
     "tslint:latest",
-    "tslint-config-prettier"
+    "tslint-config-prettier",
+    "dist",
+    "tests",
+    "lambda",
+    "src/e2e"
   ]
 }

@@ -33,24 +33,15 @@ class AvatarDropdown extends React.Component<GlobalHeaderRightProps> {
   };
 
   render(): React.ReactNode {
-    const { currentUser = { avatar: '', name: '' }, menu } = this.props;
+    const { currentUser = { avatar: '', name: '' } } = this.props;
 
     const menuHeaderDropdown = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={this.onMenuClick}>
-        {menu && (
-          <Menu.Item key="center">
-            <Icon type="user" />
-            <FormattedMessage id="menu.account.center" defaultMessage="account center" />
-          </Menu.Item>
-        )}
-        {menu && (
-          <Menu.Item key="settings">
-            <Icon type="setting" />
-            <FormattedMessage id="menu.account.settings" defaultMessage="account settings" />
-          </Menu.Item>
-        )}
-        {menu && <Menu.Divider />}
-
+        <Menu.Item key="change-password">
+          <Icon type="lock" />
+          <FormattedMessage id="menu.account.changePassword" defaultMessage="Change Password" />
+        </Menu.Item>
+        <Menu.Divider />
         <Menu.Item key="logout">
           <Icon type="logout" />
           <FormattedMessage id="menu.account.logout" defaultMessage="logout" />
@@ -61,7 +52,11 @@ class AvatarDropdown extends React.Component<GlobalHeaderRightProps> {
     return currentUser && currentUser.name ? (
       <HeaderDropdown overlay={menuHeaderDropdown}>
         <span className={`${styles.action} ${styles.account}`}>
-          <Avatar size="small" className={styles.avatar} src={currentUser.avatar} alt="avatar" />
+          {currentUser.avatar ? (
+            <Avatar size="small" className={styles.avatar} src={currentUser.avatar} alt="avatar" />
+          ) : (
+            <Icon style={{ marginRight: 10 }} type="user" />
+          )}
           <span className={styles.name}>{currentUser.name}</span>
         </span>
       </HeaderDropdown>

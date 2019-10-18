@@ -38,3 +38,14 @@ screenshot
 .eslintcache
 
 build
+
+# 语言
+**/*fr-FR*
+**/*tr-TR*
+**/*zh-TW*
+**/*pt-BR*
+**/*ja-JP*
+**/*ru-RU*
+
+# Docker
+**/*Docker*
