@@ -117,7 +117,7 @@ request.interceptors.request.use(async (url, options) => {
       Authorization: `Bearer ${tokenVal}`,
     };
   }
-  return { url, options: newHeaders };
+  return { url, options: { ...options, headers: newHeaders } };
 });
 
 // 增删改查模版
