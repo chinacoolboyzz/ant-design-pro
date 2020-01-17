@@ -61,7 +61,7 @@ class ChangePassword extends PureComponent<PropsType, StateType> {
       loading,
     } = this.props;
 
-    const tonkeVal: any = token.parse();
+    const tokenVal: any = token.parse();
     return (
       <PageHeaderWrapper
         title={formatMessage({
@@ -70,10 +70,10 @@ class ChangePassword extends PureComponent<PropsType, StateType> {
         })}
       >
         <Card bordered={false}>
-          {tonkeVal && (
+          {tokenVal && (
             <Form {...formLayout} onSubmit={this.handleSubmit}>
               {getFieldDecorator('uuid', {
-                initialValue: tonkeVal.usr.uuid,
+                initialValue: tokenVal && tokenVal.usr.uuid,
               })(<Input hidden />)}
               <Form.Item label="原密码">
                 {getFieldDecorator('current_password', {

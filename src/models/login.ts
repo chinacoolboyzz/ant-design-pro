@@ -39,7 +39,7 @@ const Model: LoginModelType = {
 
   effects: {
     *login({ payload }, { call, put }) {
-      const response = yield call(authLogin, payload);
+      const response = yield call(authLogin, payload, 'POST');
       if (!(response || {}).token) {
         return;
       }
