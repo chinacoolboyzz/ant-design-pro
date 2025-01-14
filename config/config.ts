@@ -1,191 +1,168 @@
-import { IConfig, IPlugin } from 'umi-types';
-import defaultSettings from './defaultSettings'; // https://umijs.org/config/
+// https://umijs.org/config/
+import { defineConfig } from '@umijs/max';
+import { join } from 'path';
+import defaultSettings from './defaultSettings';
+import proxy from './proxy';
+import routes from './routes';
 
-import slash from 'slash2';
-import webpackPlugin from './plugin.config';
-const { pwa, primaryColor } = defaultSettings;
+const { REACT_APP_ENV = 'dev' } = process.env;
 
-// preview.pro.ant.design only do not use in your production ;
-// preview.pro.ant.design 专用环境变量，请不要在你的项目中使用它。
-const { ANT_DESIGN_PRO_ONLY_DO_NOT_USE_IN_YOUR_PRODUCTION } = process.env;
-const isAntDesignProPreview = ANT_DESIGN_PRO_ONLY_DO_NOT_USE_IN_YOUR_PRODUCTION === 'site';
-const plugins: IPlugin[] = [
-  [
-    'umi-plugin-react',
-    {
-      antd: true,
-      dva: {
-        hmr: true,
-      },
-      locale: {
-        // default false
-        enable: true,
-        // default zh-CN
-        default: 'zh-CN',
-        // default true, when it is true, will use `navigator.language` overwrite default
-        baseNavigator: true,
-      },
-      // dynamicImport: {
-      //   loadingComponent: './components/PageLoading/index',
-      //   webpackChunkName: true,
-      //   level: 3,
-      // },
-      pwa: pwa
-        ? {
-            workboxPluginMode: 'InjectManifest',
-            workboxOptions: {
-              importWorkboxFrom: 'local',
-            },
-          }
-        : false,
-      // default close dll, because issue https://github.com/ant-design/ant-design-pro/issues/4665
-      // dll features https://webpack.js.org/plugins/dll-plugin/
-      // dll: {
-      //   include: ['dva', 'dva/router', 'dva/saga', 'dva/fetch'],
-      //   exclude: ['@babel/runtime', 'netlify-lambda'],
-      // },
-    },
-  ],
-  [
-    'umi-plugin-pro-block',
-    {
-      moveMock: false,
-      moveService: false,
-      modifyRequest: true,
-      autoAddMenu: true,
-    },
-  ],
-]; // 针对 preview.pro.ant.design 的 GA 统计代码
+/**
+ * @name 使用公共路径
+ * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
+ * @doc https://umijs.org/docs/api/config#publicpath
+ */
+const PUBLIC_PATH: string = '/';
 
-if (isAntDesignProPreview) {
-  plugins.push([
-    'umi-plugin-ga',
-    {
-      code: 'UA-72788897-6',
-    },
-  ]);
-  plugins.push([
-    'umi-plugin-pro',
-    {
-      serverUrl: 'https://ant-design-pro.netlify.com',
-    },
-  ]);
-}
-
-export default {
-  plugins,
-  block: {
-    // 国内用户可以使用码云
-    // defaultGitUrl: 'https://gitee.com/ant-design/pro-blocks',
-    defaultGitUrl: 'https://github.com/ant-design/pro-blocks',
-  },
+export default defineConfig({
+  /**
+   * @name 开启 hash 模式
+   * @description 让 build 之后的产物包含 hash 后缀。通常用于增量发布和避免浏览器加载缓存。
+   * @doc https://umijs.org/docs/api/config#hash
+   */
   hash: true,
-  targets: {
-    ie: 11,
-  },
-  devtool: isAntDesignProPreview ? 'source-map' : false,
-  // umi routes: https://umijs.org/zh/guide/router.html
-  routes: [
-    {
-      path: '/user',
-      component: '../layouts/UserLayout',
-      routes: [
-        {
-          name: 'login',
-          path: '/user/login',
-          component: './user/login',
-        },
-      ],
-    },
-    {
-      path: '/',
-      component: '../layouts/SecurityLayout',
-      routes: [
-        {
-          path: '/',
-          component: '../layouts/BasicLayout',
-          authority: ['admin', 'user'],
-          routes: [
-            {
-              path: '/',
-              redirect: '/welcome',
-            },
-            {
-              path: '/welcome',
-              name: 'welcome',
-              icon: 'smile',
-              component: './Welcome',
-            },
-            {
-              component: './404',
-            },
-          ],
-        },
-        {
-          component: './404',
-        },
-      ],
-    },
 
+  publicPath: PUBLIC_PATH,
+
+  /**
+   * @name 兼容性设置
+   * @description 设置 ie11 不一定完美兼容，需要检查自己使用的所有依赖
+   * @doc https://umijs.org/docs/api/config#targets
+   */
+  // targets: {
+  //   ie: 11,
+  // },
+  /**
+   * @name 路由的配置，不在路由中引入的文件不会编译
+   * @description 只支持 path，component，routes，redirect，wrappers，title 的配置
+   * @doc https://umijs.org/docs/guides/routes
+   */
+  // umi routes: https://umijs.org/docs/routing
+  routes,
+  /**
+   * @name 主题的配置
+   * @description 虽然叫主题，但是其实只是 less 的变量设置
+   * @doc antd的主题设置 https://ant.design/docs/react/customize-theme-cn
+   * @doc umi 的theme 配置 https://umijs.org/docs/api/config#theme
+   */
+  theme: {
+    // 如果不想要 configProvide 动态设置主题需要把这个设置为 default
+    // 只有设置为 variable， 才能使用 configProvide 动态设置主色调
+    'root-entry-name': 'variable',
+  },
+  /**
+   * @name moment 的国际化配置
+   * @description 如果对国际化没有要求，打开之后能减少js的包大小
+   * @doc https://umijs.org/docs/api/config#ignoremomentlocale
+   */
+  ignoreMomentLocale: true,
+  /**
+   * @name 代理配置
+   * @description 可以让你的本地服务器代理到你的服务器上，这样你就可以访问服务器的数据了
+   * @see 要注意以下 代理只能在本地开发时使用，build 之后就无法使用了。
+   * @doc 代理介绍 https://umijs.org/docs/guides/proxy
+   * @doc 代理配置 https://umijs.org/docs/api/config#proxy
+   */
+  proxy: proxy[REACT_APP_ENV as keyof typeof proxy],
+  /**
+   * @name 快速热更新配置
+   * @description 一个不错的热更新组件，更新时可以保留 state
+   */
+  fastRefresh: true,
+  //============== 以下都是max的插件配置 ===============
+  /**
+   * @name 数据流插件
+   * @@doc https://umijs.org/docs/max/data-flow
+   */
+  model: {},
+  /**
+   * 一个全局的初始数据流，可以用它在插件之间共享数据
+   * @description 可以用来存放一些全局的数据，比如用户信息，或者一些全局的状态，全局初始状态在整个 Umi 项目的最开始创建。
+   * @doc https://umijs.org/docs/max/data-flow#%E5%85%A8%E5%B1%80%E5%88%9D%E5%A7%8B%E7%8A%B6%E6%80%81
+   */
+  initialState: {},
+  /**
+   * @name layout 插件
+   * @doc https://umijs.org/docs/max/layout-menu
+   */
+  title: 'Ant Design Pro',
+  layout: {
+    locale: true,
+    ...defaultSettings,
+  },
+  /**
+   * @name moment2dayjs 插件
+   * @description 将项目中的 moment 替换为 dayjs
+   * @doc https://umijs.org/docs/max/moment2dayjs
+   */
+  moment2dayjs: {
+    preset: 'antd',
+    plugins: ['duration'],
+  },
+  /**
+   * @name 国际化插件
+   * @doc https://umijs.org/docs/max/i18n
+   */
+  locale: {
+    // default zh-CN
+    default: 'zh-CN',
+    antd: true,
+    // default true, when it is true, will use `navigator.language` overwrite default
+    baseNavigator: true,
+  },
+  /**
+   * @name antd 插件
+   * @description 内置了 babel import 插件
+   * @doc https://umijs.org/docs/max/antd#antd
+   */
+  antd: {},
+  /**
+   * @name 网络请求配置
+   * @description 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
+   * @doc https://umijs.org/docs/max/request
+   */
+  request: {},
+  /**
+   * @name 权限插件
+   * @description 基于 initialState 的权限插件，必须先打开 initialState
+   * @doc https://umijs.org/docs/max/access
+   */
+  access: {},
+  /**
+   * @name <head> 中额外的 script
+   * @description 配置 <head> 中额外的 script
+   */
+  headScripts: [
+    // 解决首次加载时白屏的问题
+    { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
+  ],
+  //================ pro 插件配置 =================
+  presets: ['umi-presets-pro'],
+  /**
+   * @name openAPI 插件的配置
+   * @description 基于 openapi 的规范生成serve 和mock，能减少很多样板代码
+   * @doc https://pro.ant.design/zh-cn/docs/openapi/
+   */
+  openAPI: [
     {
-      component: './404',
+      requestLibPath: "import { request } from '@umijs/max'",
+      // 或者使用在线的版本
+      // schemaPath: "https://gw.alipayobjects.com/os/antfincdn/M%24jrzTTYJN/oneapi.json"
+      schemaPath: join(__dirname, 'oneapi.json'),
+      mock: false,
+    },
+    {
+      requestLibPath: "import { request } from '@umijs/max'",
+      schemaPath: 'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
+      projectName: 'swagger',
     },
   ],
-  // Theme for antd: https://ant.design/docs/react/customize-theme-cn
-  theme: {
-    'primary-color': primaryColor,
-  },
-  define: {
-    ANT_DESIGN_PRO_ONLY_DO_NOT_USE_IN_YOUR_PRODUCTION:
-      ANT_DESIGN_PRO_ONLY_DO_NOT_USE_IN_YOUR_PRODUCTION || '', // preview.pro.ant.design only do not use in your production ; preview.pro.ant.design 专用环境变量，请不要在你的项目中使用它。
-  },
-  ignoreMomentLocale: true,
-  lessLoaderOptions: {
-    javascriptEnabled: true,
-  },
-  disableRedirectHoist: true,
-  cssLoaderOptions: {
-    modules: true,
-    getLocalIdent: (
-      context: {
-        resourcePath: string;
-      },
-      _: string,
-      localName: string,
-    ) => {
-      if (
-        context.resourcePath.includes('node_modules') ||
-        context.resourcePath.includes('ant.design.pro.less') ||
-        context.resourcePath.includes('global.less')
-      ) {
-        return localName;
-      }
-
-      const match = context.resourcePath.match(/src(.*)/);
-
-      if (match && match[1]) {
-        const antdProPath = match[1].replace('.less', '');
-        const arr = slash(antdProPath)
-          .split('/')
-          .map((a: string) => a.replace(/([A-Z])/g, '-$1'))
-          .map((a: string) => a.toLowerCase());
-        return `antd-pro${arr.join('-')}-${localName}`.replace(/--/g, '-');
-      }
-
-      return localName;
-    },
-  },
-  manifest: {
-    basePath: '/',
-  },
-  chainWebpack: webpackPlugin,
-  /*
-  proxy: {
-    '/server/api/': {
-      target: 'https://preview.pro.ant.design/',
-      changeOrigin: true,
-      pathRewrite: { '^/server': '' },
-    },
-  },
-  */
-} as IConfig;
+  /**
+   * @name 是否开启 mako
+   * @description 使用 mako 极速研发
+   * @doc https://umijs.org/docs/api/config#mako
+   */
+  mako: {},
+  esbuildMinifyIIFE: true,
+  requestRecord: {},
+});
